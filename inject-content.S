@@ -32,6 +32,13 @@ GLOBAL(inject_so_loader)
 	nop
 	nop
 	nop
+
+	/*
+	 * since recently dlopen use movabs instruction,
+	 * stack must aligned by 16byte.
+	 */
+	andq $-16, %rsp
+
 	/*
 	 * rsi is going to contain the address of free().
 	 * it's going to get wiped out by the call to malloc(),
