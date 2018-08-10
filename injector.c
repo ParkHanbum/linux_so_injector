@@ -139,8 +139,15 @@ void release_threads(pid_t **tids, int thread_count)
 	}
 }
 
-int inject(char *libname, pid_t pid)
+
+int main(int argc, char** argv)
 {
+	char *libname = argv[1];
+	pid_t pid = atoi(argv[2]);
+	pid_t tid = atoi(argv[3]);
+	unsigned long tid_var_addr = strtoul(argv[4], NULL, 16);
+	long detach_flag = atoi(argv[5]);
+
 	struct user_regs_struct oldregs, regs;
 	struct user_regs_struct malloc_regs;
 	struct user_regs_struct dlopen_regs;
@@ -160,6 +167,7 @@ int inject(char *libname, pid_t pid)
 	pid_t *tids = NULL;
 
 	lib_path = realpath(libname, NULL);
+	long temp = 0;
 
 	/*
 	 * figure out the size of contents to be injected.
@@ -272,14 +280,21 @@ int inject(char *libname, pid_t pid)
 	 */
 	ptrace_write(target, addr, injected_area, inject_size);
 
+
 	/*
 	 * ptrace continue will make child thread get wake-up.
 	 * this can be harmful during injection.
 	 * therefore, make all child threads enter the loop
 	 * until injecting done.
 	 */
-	// thread_count = get_tids(pid, &tids);
-	// seal_threads(target, addr, &tids, thread_count);
+	thread_count = get_tids(pid, &tids);
+	seal_threads(target, addr, &tids, thread_count);
+
+	// check tid_var after attach.
+	pr_dbg("Address = %llx\n", tid_var_addr);
+	temp = ptrace(PTRACE_PEEKDATA, tid, tid_var_addr, 0);
+	pr_dbg("data = %llx\n", temp);
+
 
 	regs.rdi = target_malloc_addr;
 	regs.rsi = target_free_addr;
@@ -355,23 +370,27 @@ int inject(char *libname, pid_t pid)
 	pr_dbg("free was successfully ended. \n");
 
 	/* release all child threads */
+	pr_dbg("Release child threads \n");
 	// release_threads(&tids, thread_count);
+	pr_dbg("Release done \n");
+
+
+	// check tid_var before detach
+	pr_dbg("Address = %llx\n", tid_var_addr);
+	temp = ptrace(PTRACE_PEEKDATA, tid, tid_var_addr, 0);
+	pr_dbg("data = %llx\n", temp);
 
 	/*
 	 * at this point, if everything went according to plan, we've loaded
 	 * the shared library inside the target process, so we're done.
 	 * restore the old state and detach from the target.
 	 */
-	restore_state_and_detach(target, addr, backup, inject_size, oldregs);
-	free(backup);
-	free(injected_area);
+	if (detach_flag) {
+		restore_state_and_detach(target, addr, backup, inject_size, oldregs);
+		free(backup);
+		free(injected_area);
+	}
+
 	return 0;
 }
 
-int main(int argc, char** argv)
-{
-	char *libname = argv[1];
-	pid_t pid = atoi(argv[2]);
-
-	inject(libname, pid);
-}

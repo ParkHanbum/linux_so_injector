@@ -187,6 +187,7 @@ GLOBAL(inject_loop_enter)
 	push %rax
 	push $0
 loop:
+	pause
 	movq 0(%rsp), %rax
 	test %rax, %rax
 	je loop
