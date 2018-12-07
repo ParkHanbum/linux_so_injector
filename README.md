@@ -1,6 +1,17 @@
+# Linux so injector
+
+Requirement
+1. only support x86 64bit architecture. 
+2. this project uses dlopen which is present in libdl to inject shared object, so the target program must be loading libdl.so.
 
 
-You can test the stability of feature to inject into a shared object.
+This project aims to inject a Shared object into a process running on Linux.
+- Supports multi-threading.
+- Sacrificed stability for fastest injection.
+
+Test in Ubuntu 18.04 64bit.
+
+# Example
 
 ```
 $ make
