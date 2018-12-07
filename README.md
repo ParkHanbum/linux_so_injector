@@ -6,7 +6,7 @@ Requirement
 
 
 This project aims to inject a Shared object into a process running on Linux.
-- Supports multi-threading.
+- Supports multi-thread safe.
 - Sacrificed stability for fastest injection.
 
 Test in Ubuntu 18.04 64bit.
