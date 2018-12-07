@@ -49,3 +49,6 @@ run this command when you see the "ptrace attach failed" message.
 ```
 echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
 ```
+
+## Lincese
+GPLv2
