@@ -30,6 +30,7 @@ inject_so_loader:
 	/*
 	 * save registers what used in below codes
 	 */
+	pushq %rax
 	pushq %rsi
 	pushq %rdi
 	pushq %r9
@@ -72,6 +73,7 @@ inject_so_loader:
 	popq %r9
 	popq %rdi
 	popq %rsi
+	popq %rax
 
 	/*
 	 * return to original control flow that

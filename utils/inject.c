@@ -61,6 +61,11 @@ long get_so_addr(pid_t pid, char *so_name)
 	return result;
 }
 
+long get_libc_addr(pid_t pid)
+{
+	return get_so_addr(pid, "libc-");
+}
+
 long get_libdl_addr(pid_t pid)
 {
 	return get_so_addr(pid, "libdl-");

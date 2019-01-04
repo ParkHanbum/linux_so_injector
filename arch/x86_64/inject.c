@@ -18,7 +18,9 @@
 #include "utils/utils.h"
 
 #define SO_LIBC_NAME "libc.so.6"
+#define LIBC_DLOPEN_NAME	"__libc_dlopen_mode"
 #define SO_LIBDL_NAME "libdl.so.2"
+#define LIBDL_DLOPEN_NAME	"dlopen"
 
 #define MAX_PATH_LENGTH		128
 #define MAX_THREAD_COUNT	64
@@ -99,6 +101,7 @@ int inject(char *libname, pid_t pid)
 	int lib_path_length, mypid;
 	unsigned int thread_count;
 	long my_libdl_addr;
+	long my_libc_addr;
 	long dlopen_addr;
 	long dlopen_offset;
 	long target_libdl_addr;
@@ -131,6 +134,7 @@ int inject(char *libname, pid_t pid)
 	target = pid;
 	lib_path_length = strlen(lib_path) + 1;
 	mypid = getpid();
+	my_libc_addr = get_libc_addr(mypid);
 	my_libdl_addr = get_libdl_addr(mypid);
 
 	/*
@@ -138,19 +142,22 @@ int inject(char *libname, pid_t pid)
 	 * inside the target, as loaded inside THIS process
 	 * (i.e. NOT the target process)
 	 */
-	dlopen_addr = get_function_addr(SO_LIBDL_NAME, "dlopen");
+	dlopen_addr = get_function_addr(SO_LIBDL_NAME, LIBDL_DLOPEN_NAME);
+	// dlopen_addr = get_function_addr(SO_LIBC_NAME, LIBC_DLOPEN_NAME);
 
 	/*
 	 * use the base address of libdl to calculate offsets for
 	 * the dlopen we want to use
 	 */
 	dlopen_offset = dlopen_addr - my_libdl_addr;
+	// dlopen_offset = dlopen_addr - my_libc_addr;
 
 	/*
 	 * get the target process' libdl address and use it to find the
 	 * address of the dlopen we want to use inside the target process
 	 */
 	target_libdl_addr = get_libdl_addr(target);
+	// target_libdl_addr = get_libc_addr(target);
 
 	if (target_libdl_addr == 0)
 		pr_err("Cannot inject library if target process does not load libdl.so");
@@ -176,6 +183,8 @@ int inject(char *libname, pid_t pid)
 	 */
 	addr = get_inject_code_addr(target) - inject_size;
 
+	inject_so_loader_ret = regs.rip;
+	pr_dbg("Return address : %llx\n", inject_so_loader_ret);
 	/*
 	 * now that we have an address to copy code to, set the target's
 	 * rip to it. we have to advance by 2 bytes here because rip gets
@@ -183,7 +192,6 @@ int inject(char *libname, pid_t pid)
 	 * instruction at the start of the function to inject always
 	 * happens to be 2 bytes long.
 	 */
-	inject_so_loader_ret = regs.rip;
 	regs.rip = addr + 2;
 	pr_dbg("RIP Register : %llx\n", regs.rip);
 
