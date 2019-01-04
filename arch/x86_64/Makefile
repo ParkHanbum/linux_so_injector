@@ -10,8 +10,6 @@ else
 endif
 
 all: $(odir)/arch.o
-	@echo "ARCH build"
-	@echo $(COMMON_CFLAGS)
 
 $(odir)/arch.o: $(odir)/inject.op $(odir)/inject-contents.op
 	$(LD) -r -o $@ $(sdir)/inject.op $(sdir)/inject-contents.op 

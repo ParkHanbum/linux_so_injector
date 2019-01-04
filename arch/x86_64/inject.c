@@ -100,12 +100,14 @@ int inject(char *libname, pid_t pid)
 	struct user_regs_struct oldregs, regs;
 	int lib_path_length, mypid;
 	unsigned int thread_count;
-	long my_libdl_addr;
+
+#ifdef USE_LIBC_DLOPEN
 	long my_libc_addr;
-	long dlopen_addr;
-	long dlopen_offset;
-	long target_libdl_addr;
-	long target_dlopen_addr, addr;
+#else
+	long my_libdl_addr;
+#endif
+	long target_lib_addr, dlopen_addr, dlopen_offset, addr;
+	long target_dlopen_addr;
 	char *injected_area;
 	char *lib_path = NULL;
 	pid_t target = 0;
@@ -134,35 +136,28 @@ int inject(char *libname, pid_t pid)
 	target = pid;
 	lib_path_length = strlen(lib_path) + 1;
 	mypid = getpid();
+
+#ifdef USE_LIBC_DLOPEN
 	my_libc_addr = get_libc_addr(mypid);
+	dlopen_addr = get_function_addr(SO_LIBC_NAME, LIBC_DLOPEN_NAME);
+	dlopen_offset = dlopen_addr - my_libc_addr;
+	target_lib_addr = get_libc_addr(target);
+#else
 	my_libdl_addr = get_libdl_addr(mypid);
-
-	/*
-	 * find the addresses of the dlopen that we'd like to use
-	 * inside the target, as loaded inside THIS process
-	 * (i.e. NOT the target process)
-	 */
 	dlopen_addr = get_function_addr(SO_LIBDL_NAME, LIBDL_DLOPEN_NAME);
-	// dlopen_addr = get_function_addr(SO_LIBC_NAME, LIBC_DLOPEN_NAME);
-
-	/*
-	 * use the base address of libdl to calculate offsets for
-	 * the dlopen we want to use
-	 */
 	dlopen_offset = dlopen_addr - my_libdl_addr;
-	// dlopen_offset = dlopen_addr - my_libc_addr;
+	target_lib_addr = get_libdl_addr(target);
+#endif
 
 	/*
 	 * get the target process' libdl address and use it to find the
 	 * address of the dlopen we want to use inside the target process
 	 */
-	target_libdl_addr = get_libdl_addr(target);
-	// target_libdl_addr = get_libc_addr(target);
 
-	if (target_libdl_addr == 0)
+	if (target_lib_addr == 0)
 		pr_err("Cannot inject library if target process does not load libdl.so");
 
-	target_dlopen_addr = target_libdl_addr + dlopen_offset;
+	target_dlopen_addr = target_lib_addr + dlopen_offset;
 
 	memset(&oldregs, 0, sizeof(struct user_regs_struct));
 	memset(&regs, 0, sizeof(struct user_regs_struct));

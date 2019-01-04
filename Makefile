@@ -31,13 +31,13 @@ $(objdir)/injector: $(objdir)/main.o
 	$(CC) $(COMMON_CFLAGS) $(COMMON_LDFLAGS) -o $@ $(ARCH_OBJ) $(UTILS_OBJS) $^
 
 all:
-	@echo $(COMMON_CFLAGS)
 	@$(MAKE) -s build-utils
 	@$(MAKE) -s build-arch
 	@$(MAKE) -s build-main
 	@$(MAKE) -s build
 	@$(MAKE) -s sample-library
-	@$(MAKE) -s sample-target
+	@$(MAKE) -s sample-target-libc
+	@$(MAKE) -s sample-target-libdl
 	@$(MAKE) -s sample-ptrace
 	@$(MAKE) -s signal-checker
 
@@ -50,15 +50,19 @@ sample-library: sample-library.c
 signal-checker: signal-checker.c
 	$(CC) -o $@.so $^ $(CFLAGS) $(LDFLAGS) -shared -fPIC
 
-sample-target: sample-target.cpp
+sample-target-libdl: sample-target.cpp
 	$(CC) -o $@ $^ $(TARGET_CFLAGS) $(LDFLAGS) -lpthread -ldl -O0
+
+sample-target-libc: sample-target.cpp
+	$(CC) -o $@ $^ $(TARGET_CFLAGS) $(LDFLAGS) -lpthread -O0
 
 clean:
 	@$(MAKE) -C arch/x86_64 clean
 	@$(MAKE) -C utils clean
 	$(Q)$(RM) $(objdir)/injector
 	$(Q)$(RM) $(objdir)/sample-ptrace $(objdir)/signal-checker
-	$(Q)$(RM) $(objdir)/sample-target $(objdir)/sample-library
+	$(Q)$(RM) $(objdir)/sample-library
+	$(Q)$(RM) $(objdir)/sample-target-libdl $(objdir)/sample-library-libc
 	$(Q)$(RM) $(objdir)/*.o $(objdir)/*.so
 
 .PHONY: all clean PHONY
