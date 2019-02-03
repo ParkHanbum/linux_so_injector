@@ -51,9 +51,11 @@ inject_so_loader:
 	 */
 	leaq inject_so_path(%rip), %rdi
 	/*
-	 * 2nd argument to dlopen(): flag = RTLD_LAZY
+	 * 2nd argument
+	 * 0x80000000 : __RTLD_DLOPEN
+	 * 0x00000001 : RTLD_NOW
 	 */
-	movabs $1,%rsi
+	movabs $0x80000001, %rsi
 	movq inject_dlopen_addr(%rip), %r9
 
 	/*

@@ -17,10 +17,8 @@
 #include "utils/ptrace.h"
 #include "utils/utils.h"
 
-#define SO_LIBC_NAME "libc.so.6"
+#define SO_LIBC_NAME 		"libc.so.6"
 #define LIBC_DLOPEN_NAME	"__libc_dlopen_mode"
-#define SO_LIBDL_NAME "libdl.so.2"
-#define LIBDL_DLOPEN_NAME	"dlopen"
 
 #define MAX_PATH_LENGTH		128
 #define MAX_THREAD_COUNT	64
@@ -100,12 +98,7 @@ int inject(char *libname, pid_t pid)
 	struct user_regs_struct oldregs, regs;
 	int lib_path_length, mypid;
 	unsigned int thread_count;
-
-#ifdef USE_LIBC_DLOPEN
 	long my_libc_addr;
-#else
-	long my_libdl_addr;
-#endif
 	long target_lib_addr, dlopen_addr, dlopen_offset, addr;
 	long target_dlopen_addr;
 	char *injected_area;
@@ -137,17 +130,10 @@ int inject(char *libname, pid_t pid)
 	lib_path_length = strlen(lib_path) + 1;
 	mypid = getpid();
 
-#ifdef USE_LIBC_DLOPEN
 	my_libc_addr = get_libc_addr(mypid);
 	dlopen_addr = get_function_addr(SO_LIBC_NAME, LIBC_DLOPEN_NAME);
 	dlopen_offset = dlopen_addr - my_libc_addr;
 	target_lib_addr = get_libc_addr(target);
-#else
-	my_libdl_addr = get_libdl_addr(mypid);
-	dlopen_addr = get_function_addr(SO_LIBDL_NAME, LIBDL_DLOPEN_NAME);
-	dlopen_offset = dlopen_addr - my_libdl_addr;
-	target_lib_addr = get_libdl_addr(target);
-#endif
 
 	/*
 	 * get the target process' libdl address and use it to find the

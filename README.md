@@ -2,7 +2,6 @@
 
 Requirement
 1. only support x86 64bit architecture. 
-2. this project uses dlopen which is present in libdl to inject shared object, so the target program must be loading libdl.so.
 
 
 This project aims to inject a Shared object into a process running on Linux.
